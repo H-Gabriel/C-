@@ -1,5 +1,7 @@
 package lexer;
 
+import enums.Lexems;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.LinkedList;
@@ -7,7 +9,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Lexer {
-    private static final List<String> tokens = new LinkedList<>();
+    private static final List<Token> tokens = new LinkedList<>();
 
     private static boolean comment = false;
     private static String commentText = "";
@@ -48,15 +50,14 @@ public class Lexer {
                 int j = i + 1;
                 if (token.equals("*") && j < str.length() &&
                         token.concat(Character.toString(str.charAt(j))).equals("*/")) {
-                    printToken("COMMENT", commentText, false);
-                    printToken("SYMBOL", "*/", false);
+                    tokens.add(new Token(Lexems.SYMBOL, "*/"));
                     comment = false;
                     commentText = "";
                     i++;
                     continue;
                 } else if (j == str.length()) {
                     commentText = commentText.concat(token);
-                    printToken(null, commentText, true);
+                    System.out.println("[INVALID] " + commentText);
                 }
                 commentText = commentText.concat(token);
                 continue;
@@ -74,7 +75,7 @@ public class Lexer {
                 }
                 i = temp - 1;
 
-                printToken("NUM", token, false);
+                tokens.add(new Token(Lexems.NUM, token));
                 continue;
             }
 
@@ -91,46 +92,49 @@ public class Lexer {
                 i = temp - 1;
 
                 if (LexerUtil.isKeyword(token)) {
-                    printToken("KEYWORD", token, false);
+                    tokens.add(new Token(Lexems.KEYWORD, token));
                 } else {
-                    printToken("ID", token, false);
+                    tokens.add(new Token(Lexems.ID, token));
                 }
                 continue;
             }
 
             if (LexerUtil.isStartSpecialSymbol(character)) {
                 if (i + 1 == str.length()) {
-                    printToken("SYMBOL", token, token.equals("!"));
+                    if (token.equals("!")) {
+                        System.out.println("[INVALID] " + token);
+                    } else {
+                        tokens.add(new Token(Lexems.SYMBOL, token));
+                    }
                 } else {
                     String symbol = token.concat(Character.toString(str.charAt(i + 1)));
                     if (LexerUtil.isFullSpecialSymbol(symbol)) {
-                        printToken("SYMBOL", symbol, false);
+                        tokens.add(new Token(Lexems.SYMBOL, symbol));
                         comment = symbol.equals("/*");
                         i++;
                     } else {
-                        printToken("SYMBOL", token, token.equals("!"));
+                        if (token.equals("!")) {
+                            System.out.println("[INVALID]: " + token);
+                        } else {
+                            tokens.add(new Token(Lexems.SYMBOL, token));
+                        }
                     }
                 }
                 continue;
             }
 
             if (LexerUtil.isSingleSpecialSymbol(character)) {
-                printToken("SYMBOL", token, false);
+                tokens.add(new Token(Lexems.SYMBOL, token));
                 continue;
             }
 
             if (!token.equals(" ")) {
-                printToken(null, token, true);
+                System.out.println("[INVALID] " + token);
             }
         }
     }
 
-    private static void printToken(String lexeme, String token, boolean err) {
-        if (!err) {
-            System.out.printf("[%s] %s\n", lexeme, token);
-            tokens.add(token);
-        } else {
-            System.out.printf("[INVALID] %s\n", token);
-        }
+    public static List<Token> getTokens() {
+        return tokens;
     }
 }
