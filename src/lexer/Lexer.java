@@ -4,12 +4,12 @@ import enums.Lexems;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class Lexer {
-    private static final List<Token> tokens = new LinkedList<>();
+    private static final List<Token> tokens = new ArrayList<>();
 
     private static boolean comment = false;
     private static String commentText = "";
@@ -50,7 +50,7 @@ public class Lexer {
                 int j = i + 1;
                 if (token.equals("*") && j < str.length() &&
                         token.concat(Character.toString(str.charAt(j))).equals("*/")) {
-                    tokens.add(new Token(Lexems.SYMBOL, "*/"));
+                    //tokens.add(new Token(Lexems.SYMBOL, "*/"));
                     comment = false;
                     commentText = "";
                     i++;
@@ -109,8 +109,10 @@ public class Lexer {
                 } else {
                     String symbol = token.concat(Character.toString(str.charAt(i + 1)));
                     if (LexerUtil.isFullSpecialSymbol(symbol)) {
-                        tokens.add(new Token(Lexems.SYMBOL, symbol));
                         comment = symbol.equals("/*");
+                        if (!comment) {
+                            tokens.add(new Token(Lexems.SYMBOL, symbol));
+                        }
                         i++;
                     } else {
                         if (token.equals("!")) {
