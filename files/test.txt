@@ -1,0 +1,8 @@
+/*this is a comment*/
+int lexer(){
+    int i = 5;
+    /*i will be 0 after the cobe below*/
+    while(i >= 1) {
+        i--;
+    }
+}
