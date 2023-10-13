@@ -199,24 +199,198 @@ public class Parser {
         return expression() && getToken().equals(";");
     }
 
+    // TODO: -------------------------------------------------
+
     private static boolean selectionStmt() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (getToken().equals("if")) {
+            index++;
+            if (getToken().equals("(")) {
+                index++;
+                if (expression() && getToken().equals(")")) {
+                    index++;
+                    if (statement()) {
+                        if (getToken().equals("else")) {
+                            index++;
+                            return statement();
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
     public static boolean iterationStmt() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (getToken().equals("while")) {
+            index++;
+            if (getToken().equals("(")) {
+                index++;
+                if (expression() && getToken().equals(")")) {
+                    index++;
+                    return statement();
+                }
+            }
+        }
         return false;
     }
 
     public static boolean returnStmt() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (getToken().equals("return")) {
+            index++;
+            if (getToken().equals(";")) {
+                index++;
+                return true;
+            }
+            return expression() && getToken().equals(";");
+        }
         return false;
     }
 
     private static boolean expression() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (num()) return true;
+
+        if (var()) {
+            if (getToken().equals("=")) {
+                index++;
+                return expression();
+            }
+            return simpleExpression();
+        }
         return false;
     }
 
+    private static boolean var() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (id()) {
+            if (getToken().equals("[")) {
+                index++;
+                if (expression() && getToken().equals("]")) {
+                    index++;
+                    return true;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean simpleExpression() {
+        if (additiveExpression()) {
+            if (relop()) {
+                return additiveExpression();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean relop() {
+        if (getToken().equals("<=") || getToken().equals("<") || getToken().equals(">") ||
+            getToken().equals(">=") || getToken().equals("==") || getToken().equals("!=")) {
+            index++;
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean additiveExpression() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (additiveExpression()) {
+            if (addop()) {
+                return term();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean term() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (factor()) {
+            if (mulop()) {
+                return factor();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean mulop() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (getToken().equals("*") || getToken().equals("/")) {
+            index++;
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean factor() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (getToken().equals("(")) {
+            index++;
+            if (expression() && getToken().equals(")")) {
+                index++;
+                return true;
+            }
+        } else if (var()) {
+            return true;
+        } else if (call()) {
+            return true;
+        } else return num();
+        return false;
+    }
+
+    private static boolean call() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (id()) {
+            if (getToken().equals("(")) {
+                index++;
+                if (args() && getToken().equals(")")) {
+                    index++;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean args() {
+        if (getToken().equals(")")) {
+            return true;
+        }
+        return argList();
+    }
+
+    private static boolean argList() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (expression()) {
+            while (getToken().equals(",")) {
+                index++;
+                expression();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean addop() {
+        // TODO: CHECAR SE PRECISA DE ROLLBACK
+        if (getToken().equals("+") || getToken().equals("-")) {
+            index++;
+            return true;
+        }
+        return false;
+    }
+
+    // TODO: -------------------------------------------------
+
     private static boolean id() {
-        if (tokens.get(index).getLexem() == Lexems.ID) {
+        if (getLexem().equals(Lexems.ID)) {
             index++;
             rollback++;
             return true;
@@ -225,12 +399,16 @@ public class Parser {
     }
 
     private static boolean num() {
-        if (tokens.get(index).getLexem() == Lexems.NUM) {
+        if (getLexem().equals(Lexems.NUM)) {
             index++;
             rollback++;
             return true;
         }
         return false;
+    }
+
+    private static Lexems getLexem() {
+        return tokens.get(index).getLexem();
     }
 
     private static String getToken() {
