@@ -53,140 +53,137 @@ import java.util.List;
 
 public class Parser {
 
-	private static List<Token> tokens;
+    private static List<Token> tokens;
 
-	private static int index = 0;
+    private static int index = 0;
 
-	public static void main(String[] args) {
-		Lexer.main(args);
-		tokens = Lexer.getTokens();
-		parse();
-	}
+    public static void main(String[] args) {
+        Lexer.main(args);
+        tokens = Lexer.getTokens();
+        parse();
+    }
 
-	private static void parse() {
-		boolean valid = declarationList();
+    private static void parse() {
+        boolean valid = declarationList();
+        System.out.println(valid ? "VÁLIDO" : "INVÁLIDO");
+    }
 
-		System.out.println(valid ? "VÁLIDO" : "INVÁLIDO");
-	}
+    private static boolean declarationList() {
+        boolean valid = true;
+        while (valid && index != tokens.size()) {
+            valid = declaration();
+        }
+        return valid;
+    }
 
-	private static boolean declarationList() {
-		boolean valid = true;
-		while (valid && index != tokens.size()) {
-			valid = declaration();
-		}
-		return valid;
-	}
+    private static boolean declaration() {
+        boolean hasSpecifier = typeSpecifier();
+        boolean hasId = hasSpecifier && id();
+        return hasId && (varDeclaration() || funDeclaration());
+    }
 
-	private static boolean declaration() {
-		boolean hasSpecifier = typeSpecifier();
-		boolean hasId = hasSpecifier && id();
+    private static boolean varDeclaration() {
+        if (getToken().equals(";")) {
+            index++;
+            return true;
+        } else if (getToken().equals("[")) {
+            index++;
+            if (num() && getToken().equals("]")) {
+                index++;
+                if (getToken().equals(";")) {
+                    index++;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-		return hasId && (varDeclaration() || funDeclaration());
-	}
+    private static boolean funDeclaration() {
+        if (getToken().equals("(")) {
+            index++;
+            if (params() && getToken().equals(")")) {
+                index++;
+                return compoundStmt();
+            }
+        }
+        return false;
+    }
 
-	private static boolean varDeclaration() {
-		if (getToken().equals(";")) {
-			index++;
-			return true;
-		} else if (getToken().equals("[")) {
-			index++;
-			if (num() && getToken().equals("]")) {
-				index++;
-				if (getToken().equals(";")) {
-					index++;
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+    private static boolean typeSpecifier() {
+        String token = getToken();
+        if (token.equals("int") || token.equals("void")) {
+            index++;
+            return true;
+        }
+        return false;
+    }
 
-	private static boolean funDeclaration() {
-		if (getToken().equals("(")) {
-			index++;
-			if (params() && getToken().equals(")")) {
-				index++;
-				return compoundStmt();
-			}
-		}
-		return false;
-	}
+    private static boolean params() {
+        if (getToken().equals(")")) {
+            index++;
+            return true;
+        } else {
+            return paramList();
+        }
+    }
 
-	private static boolean typeSpecifier() {
-		String token = getToken();
-		if (token.equals("int") || token.equals("void")) {
-			index++;
-			return true;
-		}
-		return false;
-	}
+    private static boolean paramList() {
+        boolean hasParamList = param();
+        while (getToken().equals(",")) {
+            param();
+        }
+        return hasParamList;
+    }
 
-	private static boolean params() {
-		if (getToken().equals(")")) {
-			index++;
-			return true;
-		} else {
-			return paramList();
-		}
-	}
+    private static boolean param() {
+        boolean hasSpecifier = typeSpecifier();
+        boolean hasId = hasSpecifier && id();
+        if (hasId) {
+            if (getToken().equals("[") && tokens.get(index + 1).getContent().equals("(")) {
+                index += 2;
+            }
+            return true;
+        }
+        return false;
+    }
 
-	private static boolean paramList() {
-		boolean hasParamList = param();
-		while (getToken().equals(",")) {
-			param();
-		}
-		return hasParamList;
-	}
+    private static boolean compoundStmt() {
+        if (getToken().equals("{")) {
+            index++;
+            if (localDeclarations() && statementList() && getToken().equals("}")) {
+                index++;
+                return true;
+            }
+        }
+        return false;
+    }
 
-	private static boolean param() {
-		boolean hasSpecifier = typeSpecifier();
-		boolean hasId = hasSpecifier && id();
+    private static boolean localDeclarations() {
+        return false;
+    }
 
-		if (hasId) {
-			if (getToken().equals("[") && tokens.get(index + 1).getContent().equals("(")) {
-				index += 2;
-			}
-			return true;
-		}
-		return false;
-	}
+    private static boolean statementList() {
+        return false;
+    }
 
-	private static boolean compoundStmt() {
-		if (getToken().equals("{")) {
-			index++;
-			if (localDeclarations() && statementList() && getToken().equals("}")) {
-				index++;
-				return true;
-			}
-		}
-		return false;
-	}
+    private static boolean id() {
+        if (tokens.get(index).getLexem() == Lexems.ID) {
+            index++;
+            return true;
+        }
+        return false;
+    }
 
-	private static boolean localDeclarations() {
-		return false;
-	}
+    private static boolean num() {
+        if (tokens.get(index).getLexem() == Lexems.NUM) {
+            index++;
+            return true;
+        }
+        return false;
+    }
 
-	private static boolean statementList() {
-		return false;
-	}
-
-	private static boolean id() {
-		if (tokens.get(index).getLexem() == Lexems.ID) {
-			index++;
-			return true;
-		}
-		return false;
-	}
-
-	private static boolean num() {
-		if (tokens.get(index).getLexem() == Lexems.NUM) {
-			index++;
-			return true;
-		}
-		return false;
-	}
-
-	private static String getToken() {
-		return tokens.get(index).getContent();
-	}
+    private static String getToken() {
+        return tokens.get(index).getContent();
+    }
 }
