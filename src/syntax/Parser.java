@@ -56,6 +56,7 @@ public class Parser {
     private static List<Token> tokens;
 
     private static int index = 0;
+    private static int rollback = 0;
 
     public static void main(String[] args) {
         Lexer.main(args);
@@ -77,36 +78,32 @@ public class Parser {
     }
 
     private static boolean declaration() {
-        boolean hasSpecifier = typeSpecifier();
-        boolean hasId = hasSpecifier && id();
-        return hasId && (varDeclaration() || funDeclaration());
+        return varDeclaration() || funDeclaration();
     }
 
     private static boolean varDeclaration() {
-        if (getToken().equals(";")) {
+        boolean hasSpecifier = typeSpecifier();
+        boolean hasId = hasSpecifier && id();
+        if (hasId && getToken().equals(";")) {
             index++;
+            rollback = 0;
             return true;
-        } else if (getToken().equals("[")) {
+        }
+        if (hasId && getToken().equals("[")) {
             index++;
+            rollback++;
             if (num() && getToken().equals("]")) {
                 index++;
+                rollback++;
                 if (getToken().equals(";")) {
                     index++;
+                    rollback = 0;
                     return true;
                 }
             }
         }
-        return false;
-    }
-
-    private static boolean funDeclaration() {
-        if (getToken().equals("(")) {
-            index++;
-            if (params() && getToken().equals(")")) {
-                index++;
-                return compoundStmt();
-            }
-        }
+        index -= rollback;
+        rollback = 0;
         return false;
     }
 
@@ -114,23 +111,38 @@ public class Parser {
         String token = getToken();
         if (token.equals("int") || token.equals("void")) {
             index++;
+            rollback++;
             return true;
+        }
+        return false;
+    }
+
+    private static boolean funDeclaration() {
+        boolean hasSpecifier = typeSpecifier();
+        boolean hasId = hasSpecifier && id();
+        if (hasId && getToken().equals("(")) {
+            index++;
+            if (params() && getToken().equals(")")) {
+                index++;
+                rollback = 0;
+                return compoundStmt();
+            }
         }
         return false;
     }
 
     private static boolean params() {
         if (getToken().equals(")")) {
-            index++;
+            // Não incrementar o index.
             return true;
-        } else {
-            return paramList();
         }
+        return paramList();
     }
 
     private static boolean paramList() {
         boolean hasParamList = param();
         while (getToken().equals(",")) {
+            index++; // Consumo da virgula
             param();
         }
         return hasParamList;
@@ -140,7 +152,7 @@ public class Parser {
         boolean hasSpecifier = typeSpecifier();
         boolean hasId = hasSpecifier && id();
         if (hasId) {
-            if (getToken().equals("[") && tokens.get(index + 1).getContent().equals("(")) {
+            if (getToken().equals("[") && tokens.get(index + 1).getContent().equals("]")) {
                 index += 2;
             }
             return true;
@@ -160,16 +172,53 @@ public class Parser {
     }
 
     private static boolean localDeclarations() {
-        return false;
+        boolean hasVarDeclaration = varDeclaration();
+        while (hasVarDeclaration) {
+            hasVarDeclaration = varDeclaration();
+        }
+        return true;
     }
 
     private static boolean statementList() {
+        boolean hasStatement = statement();
+        while (hasStatement) {
+            hasStatement = statement();
+        }
+        return true;
+    }
+
+    private static boolean statement() {
+        return expressionStmt() || compoundStmt() || selectionStmt() || iterationStmt() || returnStmt();
+    }
+
+    private static boolean expressionStmt() {
+        if (getToken().equals(";")) {
+            index++;
+            return true;
+        }
+        return expression() && getToken().equals(";");
+    }
+
+    private static boolean selectionStmt() {
+        return false;
+    }
+
+    public static boolean iterationStmt() {
+        return false;
+    }
+
+    public static boolean returnStmt() {
+        return false;
+    }
+
+    private static boolean expression() {
         return false;
     }
 
     private static boolean id() {
         if (tokens.get(index).getLexem() == Lexems.ID) {
             index++;
+            rollback++;
             return true;
         }
         return false;
@@ -178,6 +227,7 @@ public class Parser {
     private static boolean num() {
         if (tokens.get(index).getLexem() == Lexems.NUM) {
             index++;
+            rollback++;
             return true;
         }
         return false;
