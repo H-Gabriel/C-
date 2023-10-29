@@ -4,8 +4,5 @@ int lexer(){
 
     a[2] = 5;
     i = 5;
-    /*i will be 0 after the cobe below*/
-    while(i >= 1) {
-        i--;
-    }
+    /* comment */
 }

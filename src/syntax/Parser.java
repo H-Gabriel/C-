@@ -6,51 +6,6 @@ import lexer.Token;
 
 import java.util.List;
 
-/*
-	Esse é o parser do compilador. Ele é responsável por verificar se a entrada
-	é válida ou não. Para isso, ele utiliza a lista de tokens gerada pelo lexer.
-	A BNF da linguagem é a seguinte:
-	checkmark character: ✓
-	cross mark character: ✗
-	✓ 1.    program -> declaration-list
-	✓ 2.    declaration-list -> declaration-list declaration | declaration
-	✓ 3.    declaration -> var-declaration | fun-declaration
-	✓ 4.    var-declaration -> type-specifier ID ; | type-specifier ID [ NUM ] ;
-	✓ 5.    type-specifier -> int | void
-	✓ 6.    fun-declaration -> type-specifier ID ( params ) compound-stmt
-	✓ 7.    params -> param-list | void
-	✓ 8.    param-list -> param-list , param | param
-	✓ 9.    param -> type-specifier ID | type-specifier ID [ ]
-	✓ 10.   compound-stmt -> { local-declarations statement-list }
-	✗ 11.   local-declarations -> local-declarations var-declarations | empty
-	✗ 12.   statement-list -> statement-list statement | empty
-	✗ 13.   statement -> expression-stmt | compound-stmt | selection-stmt | iteration-stmt | return-stmt
-	✗ 14.   expression-stmt -> expression ; | ;
-	✗ 15.   selection-stmt -> if ( expression ) statement | if ( expression ) statement else statement
-	✗ 16.   iteration-stmt -> while ( expression ) statement
-	✗ 17.   return-stmt -> return ; | return expression ;
-	✗ 18.   expression -> var = expression | simple-expression
-	✗ 19.   var -> ID | ID [ expression ]
-	✗ 20.   simple-expression -> additive-expression relop additive-expression | additive-expression
-	✗ 21.   relop -> <= | < | > | >= | == | !=
-	✗ 22.   additive-expression -> additive-expression addop term | term
-	✗ 23.   addop -> + | -
-	✗ 24.   term -> term mulop factor | factor
-	✗ 25.   mulop -> * | /
-	✗ 26.   factor -> ( expression ) | var | call | NUM
-	✗ 27.   call -> ID ( args )
-	✗ 28.   args -> arg-list | empty
-	✗ 29.   arg-list -> arg-list , expression | expression
-
-	Keywords: else if int return void while
-	Special symbols: + - * / < <= > >= == != = ; , ( ) [ ] { } /* *\/
-	ID = letter letter *
-	NUM = digit digit *
-	letter = a | .. | z | A | .. | Z
-	digit = 0 | .. | 9
-	Comments: /* ... *\/
-*/
-
 public class Parser {
 
     private static List<Token> tokens;
@@ -199,10 +154,7 @@ public class Parser {
         return expression() && getToken().equals(";");
     }
 
-    // TODO: -------------------------------------------------
-
     private static boolean selectionStmt() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (getToken().equals("if")) {
             index++;
             if (getToken().equals("(")) {
@@ -223,7 +175,6 @@ public class Parser {
     }
 
     public static boolean iterationStmt() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (getToken().equals("while")) {
             index++;
             if (getToken().equals("(")) {
@@ -238,7 +189,6 @@ public class Parser {
     }
 
     public static boolean returnStmt() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (getToken().equals("return")) {
             index++;
             if (getToken().equals(";")) {
@@ -251,10 +201,13 @@ public class Parser {
     }
 
     private static boolean expression() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (num()) return true;
 
         if (var()) {
+            if (getLexem().equals(Lexems.SYMBOL)) {
+                index++;
+                return num();
+            }
             if (getToken().equals("=")) {
                 index++;
                 return expression();
@@ -265,7 +218,6 @@ public class Parser {
     }
 
     private static boolean var() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (id()) {
             if (getToken().equals("[")) {
                 index++;
@@ -299,10 +251,13 @@ public class Parser {
     }
 
     private static boolean additiveExpression() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
-        if (additiveExpression()) {
+        if (term()) {
             if (addop()) {
-                return term();
+                if (term()) {
+                    while (additiveExpression()) {
+                        // Não fazer nada aqui, isso consome a recursão à esquerda da definição de additiveExpression
+                    }
+                }
             }
             return true;
         }
@@ -310,7 +265,6 @@ public class Parser {
     }
 
     private static boolean term() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (factor()) {
             if (mulop()) {
                 return factor();
@@ -321,7 +275,6 @@ public class Parser {
     }
 
     private static boolean mulop() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (getToken().equals("*") || getToken().equals("/")) {
             index++;
             return true;
@@ -330,7 +283,6 @@ public class Parser {
     }
 
     private static boolean factor() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (getToken().equals("(")) {
             index++;
             if (expression() && getToken().equals(")")) {
@@ -346,7 +298,6 @@ public class Parser {
     }
 
     private static boolean call() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (id()) {
             if (getToken().equals("(")) {
                 index++;
@@ -367,7 +318,6 @@ public class Parser {
     }
 
     private static boolean argList() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (expression()) {
             while (getToken().equals(",")) {
                 index++;
@@ -379,15 +329,12 @@ public class Parser {
     }
 
     private static boolean addop() {
-        // TODO: CHECAR SE PRECISA DE ROLLBACK
         if (getToken().equals("+") || getToken().equals("-")) {
             index++;
             return true;
         }
         return false;
     }
-
-    // TODO: -------------------------------------------------
 
     private static boolean id() {
         if (getLexem().equals(Lexems.ID)) {
